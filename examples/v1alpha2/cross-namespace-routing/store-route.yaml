@@ -6,7 +6,7 @@ metadata:
 spec:
   parentRefs:
   - name: shared-gateway
-    namespace: infra
+    namespace: infra-ns
   rules:
   - matches:
     - path:
