@@ -1,9 +1,9 @@
 # Cross-Namespace routing
 
 The Gateway API has core support for cross Namespace routing. This is useful
-when more than one user or team is sharing the underlying networking infrastructure,
-yet control and configuration must be segmented to minimize access and fault
-domains.
+when more than one user or team is sharing the underlying networking
+infrastructure, yet control and configuration must be segmented to minimize
+access and fault domains.
 
 Gateways and Routes can be deployed into different Namespaces and attached to
 each other across Namespace boundaries. This allows differing user access and
@@ -15,8 +15,8 @@ is explored in this guide which will demonstrate how two independent teams can
 safely share the same Gateway from different Namespaces.
 
 In this guide there are two independent teams, _store_ and _site_, operating
-in the same Kubernetes cluster in the `store-ns` and `site-ns` Namespaces. These are
-their requirements:
+in the same Kubernetes cluster in the `store-ns` and `site-ns` Namespaces. These
+are their requirements:
 
 - The site team has two applications, _home_ and _login_, that are running
 behind `foo.example.com`. They want to isolate access and configuration across
@@ -28,7 +28,8 @@ IP, port, domain, and TLS certificate.
 in the `store-ns` Namespace.
 - The Foobar Corporation operates behind the `foo.example.com` domain so they
 would like to host all applications on the same Gateway resource. This is
-controlled by a central infrastructure team, operating in the `infra-ns` Namespace.
+controlled by a central infrastructure team, operating in the `infra-ns`
+Namespace.
 - Lastly, the security team controls the certificate for `foo.example.com`.
 By managing this certificate through the single shared Gateway they are able
 to centrally control security without directly involving application teams.
@@ -37,7 +38,7 @@ The logical relationship between the Gateway API resources looks like this:
 
 ![Cross-Namespace routing](../images/cross-namespace-routing.svg)
 
-## Cross-namespace Route Attachement
+## Cross-namespace Route Attachment
 
 [Route attachment][attaching] is an important concept that dictates how Routes
 and Gateways select each other to apply routing configuration to a Gateway. It
@@ -61,42 +62,46 @@ specific namespaces in which those Routes live and operate. This allows a
 cluster to be more self-governed, which requires less central administration
 to ensure that Routes are not over-exposed.
 
-## Resource Deployment
+## Multi-Namespace Gateways Example
 
 The infrastructure team deploys the `shared-gateway` Gateway into the `infra-ns`
-Namespace.
+Namespace:
 
 ```yaml
 {% include 'v1alpha2/cross-namespace-routing/gateway.yaml' %}
 ```
 
-A few notes about this Gateway:
+The `http` listener in the above `Gateway` matches traffic for the
+`foo.example.com` domain specifically, this frees `HTTPRoute` resources which
+attach to it from needing to do any matching on the `hostname` which can reduce
+the amount of templating needed for deployment of the underlying application,
+since the `HTTPRoutes` developed for it can be domain agnostic (helpful for
+situations where the domain hosting the application is not static).
 
-- It is matching for the `foo.example.com` domain. This is configured on the
-Gateway so that each HTTPRoute does not also have to configure hostname matching,
-since they are all using the same domain. This also allows these HTTPRoute
-manifests to be reused across production and dev environments where the dev
-environment might be hosted at `foo.dev.corp.example.com`.
-- The Gateway is configured for HTTPS and references the `foo-example-com` Secret.
-This allows the certificate to be managed centrally for all applications which
-are using this Gateway.
-- It allows any Route in the cluster to use this Gateway because `namespaces.from = All`.
-This is a permissive method of Route selection since the Routes are given
-full control to select this Gateway. There are more restrictive forms of Route
-selection that allow selection on a per-Namespace basis, detailed
-in [Route attachment][attachment]. The following block specifies how this
-Gateway allows HTTPRoutes from all Namespaces in the cluster to attach to it:
+
+The `routes` section of this `Gateway` is particularly important because it is
+the crux of how multiple namespace support is configured in this example:
 
 ```yaml
-    routes:
+   routes:
       namespaces:
-        from: "All"
-      kinds:
-      - kind: HTTPRoute
+        selector:
+          matchLabels:
+            environment: development
 ```
 
-Meanwhile, the store team deploys their route for the `store` Service in the
-`store-ns` Namespace:
+In the above _only_ namespaces labeled as `development` will be able to attach
+their routes to the `Gateway`. The namespaces themselves must be decorated with
+the corresponding labels:
+
+```yaml
+{% include 'v1alpha2/cross-namespace-routing/0-namespaces.yaml' %}
+```
+
+## Route Attachment Examples
+
+The store team deploys their route for the `store` Service in the `store-ns`
+Namespace:
 
 ```yaml
 {% include 'v1alpha2/cross-namespace-routing/store-route.yaml' %}
@@ -115,9 +120,9 @@ the `home` Service.
 `service/login-v1` and `service/login-v2`. It uses weights to granularly
 control traffic distribution between them.
 
-Both of these Routes use the same Gateway attachment configuration which specifies
-`gateway/shared-gateway` in the `infra-ns` Namespace as the only Gateway that these
-Routes can attach with.
+Both of these Routes use the same Gateway attachment configuration which
+specifies `gateway/shared-gateway` in the `infra-ns` Namespace as the only
+Gateway that these Routes can attach with.
 
 ```yaml
 {% include 'v1alpha2/cross-namespace-routing/site-route.yaml' %}
