@@ -5,12 +5,12 @@ when more than one user or team is sharing the underlying networking infrastruct
 yet control and configuration must be segmented to minimize access and fault
 domains.
 
-Gateways and Routes can be deployed into different Namespaces and bind
-with each other across Namespace boundaries. This allows differing user access
-and roles (RBAC) to be applied to separate Namespaces, effectively controlling
-who has access to different parts of the cluster-wide routing configuration. The
-ability for Routes to bind with Gateways across Namespace boundaries is governed
-by [_Route binding_](#cross-namespace-route-binding), which
+Gateways and Routes can be deployed into different Namespaces and attached to
+each other across Namespace boundaries. This allows differing user access and
+roles (RBAC) to be applied to separate Namespaces, effectively controlling who
+has access to different parts of the cluster-wide routing configuration. The
+ability for Routes to attach to Gateways across Namespace boundaries is governed
+by [_Route Attaching_](#cross-namespace-route-attachment), which
 is explored in this guide which will demonstrate how two independent teams can
 safely share the same Gateway from different Namespaces.
 
@@ -37,15 +37,14 @@ The logical relationship between the Gateway API resources looks like this:
 
 ![Cross-Namespace routing](../images/cross-namespace-routing.svg)
 
-## Cross-namespace Route binding
+## Cross-namespace Route Attachement
 
-[Route binding](/concepts/api-overview/#route-binding) is an important concept
-that dictates how Routes and Gateways select each other to apply routing
-configuration to a Gateway. It is especially relevant when there are multiple
-Gateways and multiple Namespaces in a cluster. Gateway and Route binding is
-bidirectional - a binding can only exist if the Gateway owner and Route owner
-owner both agree to the relationship. This bi-directional relationship exists
-for two reasons:
+[Route attachment][attaching] is an important concept that dictates how Routes
+and Gateways select each other to apply routing configuration to a Gateway. It
+is especially relevant when there are multiple Gateways and multiple Namespaces
+in a cluster. Gateway and Route attachment is bidirectional - attachment can
+only succeed if the Gateway owner and Route owner owner both agree to the
+relationship. This bi-directional relationship exists for two reasons:
 
 - Route owners don't want to overexpose their applications and don't want
 their apps to be accessible through paths they are not aware of.
@@ -54,9 +53,9 @@ using. An internal application shouldn't be exposed through a public Gateway
 for example.
 
 As a result, Gateways and Routes have independent control to determine which
-resources they permit binding with. It is a handshake between the infra owners
+resources they permit attaching to. It is a handshake between the infra owners
 and the application owners that allows them to be independent actors. Routes
-can only bind to specified gateways and Gateways provide a similar level of
+can only attach to specified gateways and Gateways provide a similar level of
 selection control over which Routes they will send traffic to by trusting
 specific namespaces in which those Routes live and operate. This allows a
 cluster to be more self-governed, which requires less central administration
@@ -85,16 +84,15 @@ are using this Gateway.
 This is a permissive method of Route selection since the Routes are given
 full control to select this Gateway. There are more restrictive forms of Route
 selection that allow selection on a per-Namespace basis, detailed
-in [Route binding](/concepts/api-overview/#route-binding). The following block
-specifies how this Gateway allows HTTPRoutes from all Namespaces in the
-cluster to bind to it:
+in [Route attachment][attachment]. The following block specifies how this
+Gateway allows HTTPRoutes from all Namespaces in the cluster to attach to it:
 
 ```yaml
     routes:
       namespaces:
         from: "All"
       kinds:
-      - HTTPRoute
+      - kind: HTTPRoute
 ```
 
 Meanwhile, the store team deploys their route for the `store` Service in the
@@ -117,9 +115,9 @@ the `home` Service.
 `service/login-v1` and `service/login-v2`. It uses weights to granularly
 control traffic distribution between them.
 
-Both of these Routes use the same Gateway binding configuration which specifies
+Both of these Routes use the same Gateway attachment configuration which specifies
 `gateway/shared-gateway` in the `infra-ns` Namespace as the only Gateway that these
-Routes can bind with.
+Routes can attach with.
 
 ```yaml
 {% include 'v1alpha2/cross-namespace-routing/site-route.yaml' %}
@@ -138,3 +136,5 @@ Thanks to cross-Namespace routing, the Foobar Corporation can distribute
 ownership of their infrastructure more evenly, while still retaining centralized
 control. This gives them the best of both worlds, all delivered through
 declarative and open source APIs.
+
+[attaching]:/concepts/api-overview/#attaching-routes-to-gateways
