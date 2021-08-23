@@ -1,0 +1,34 @@
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: home
+  namespace: site-ns
+spec:
+  parentRefs:
+  - name: shared-gateway
+    namespace: infra
+  rules:
+  - backendRefs:
+    - name: home
+      port: 8080
+---
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+metadata:
+  name: login
+  namespace: site-ns
+spec:
+  parentRefs:
+  - name: shared-gateway
+    namespace: infra
+  rules:
+  - matches:
+    - path:
+        value: /login
+    backendRefs:
+    - name: login-v1
+      port: 8080
+      weight: 90
+    - name: login-v2
+      port: 8080
+      weight: 10
