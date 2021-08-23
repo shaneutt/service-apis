@@ -55,12 +55,12 @@ for example.
 
 As a result, Gateways and Routes have independent control to determine which
 resources they permit binding with. It is a handshake between the infra owners
-and the application owners that allows them to be independent actors.
-Route-owners can specify that they will bind with all Gateways in the cluster,
-or only Gateways from a specific Namespace, with a specific label selector, or
-an individual Gateway. Similarly, Gateways provide the same level of control.
-This allows a cluster to be more self-governed, which requires less central
-administration to ensure that Routes are not over-exposed.
+and the application owners that allows them to be independent actors. Routes
+can only bind to specified gateways and Gateways provide a similar level of
+selection control over which Routes they will send traffic to by trusting
+specific namespaces in which those Routes live and operate. This allows a
+cluster to be more self-governed, which requires less central administration
+to ensure that Routes are not over-exposed.
 
 ## Resource Deployment
 
