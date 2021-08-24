@@ -54,10 +54,10 @@ using. An internal application shouldn't be exposed through a public Gateway
 for example.
 
 As a result, Gateways and Routes have independent control to determine which
-resources they permit attaching to. It is a handshake between the infra owners
+resources will succeed in attaching. It is a handshake between the infra owners
 and the application owners that allows them to be independent actors. Routes
 can only attach to specified gateways and Gateways provide a similar level of
-selection control over which Routes they will send traffic to by trusting
+selection control over which Routes they allow to attach to by trusting
 specific namespaces in which those Routes live and operate. This allows a
 cluster to be more self-governed, which requires less central administration
 to ensure that Routes are not over-exposed.
