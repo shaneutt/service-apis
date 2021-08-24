@@ -5,8 +5,8 @@ when more than one user or team is sharing the underlying networking
 infrastructure, yet control and configuration must be segmented to minimize
 access and fault domains.
 
-Gateways and Routes can be deployed into different Namespaces and attached to
-each other across Namespace boundaries. This allows differing user access and
+Gateways and Routes can be deployed into different Namespaces and Routes 
+attached to Gateways across Namespace boundaries. This allows differing user access and
 roles (RBAC) to be applied to separate Namespaces, effectively controlling who
 has access to different parts of the cluster-wide routing configuration. The
 ability for Routes to attach to Gateways across Namespace boundaries is governed
@@ -122,7 +122,7 @@ control traffic distribution between them.
 
 Both of these Routes use the same Gateway attachment configuration which
 specifies `gateway/shared-gateway` in the `infra-ns` Namespace as the only
-Gateway that these Routes can attach with.
+Gateway that these Routes want to attach to.
 
 ```yaml
 {% include 'v1alpha2/cross-namespace-routing/site-route.yaml' %}
