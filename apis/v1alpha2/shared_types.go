@@ -383,3 +383,54 @@ type AnnotationKey string
 // +kubebuilder:validation:MinLength=0
 // +kubebuilder:validation:MaxLength=4096
 type AnnotationValue string
+
+// TrafficMatches defines AddressMatch rules for inbound traffic according to
+// source and/or destination of that traffic.
+type TrafficMatches struct {
+	// SourceAddresses indicates the originating (source) network
+	// addresses which are valid for routing traffic.
+	//
+	// Support: Core
+	SourceAddresses []AddressMatch `json:"sourceAddresses"`
+
+	// DestinationAddresses indicates the destination network addresses
+	// which are valid for routing traffic.
+	//
+	// Support: Core
+	DestinationAddresses []AddressMatch `json:"destinationAddresses"`
+}
+
+// AddressMatch defines matching rules for network addresses by type.
+type AddressMatch struct {
+	// Type of the address, either IPAddress or NamedAddress.
+	//
+	// If NamedAddress is used this is a custom and specific value for each
+	// implementation to handle (and add validation for) according to their
+	// own needs.
+	//
+	// For IPAddress the implementor may expect either IPv4 or IPv6.
+	//
+	// Support: Core (IPAddress)
+	// Support: Custom (NamedAddress)
+	//
+	// +optional
+	// +kubebuilder:validation:Enum=IPAddress;NamedAddress
+	// +kubebuilder:default=IPAddress
+	Type *AddressType `json:"type,omitempty"`
+
+	// Value of the address. The validity of the values will depend
+	// on the type and support by the controller.
+	//
+	// If implementations support proxy-protocol (see:
+	// https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt) they
+	// must respect the connection metadata from proxy-protocol
+	// in the match logic implemented for these address values.
+	//
+	// Examples: `1.2.3.4`, `128::1`, `my-named-address`.
+	//
+	// Support: Core
+	//
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=253
+	Value string `json:"value"`
+}
