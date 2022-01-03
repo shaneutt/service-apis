@@ -43,6 +43,22 @@ In this way each `TCPRoute` "attaches" itself to a different port on the
 `Gateway` so that the service `my-foo-service` is taking traffic for port `8080`
 from outside the cluster and `my-bar-service` takes the port `8090` traffic.
 
+## Alternatives: Routing Using Traffic Matching
+
+In addition to simply matching traffic based on a Gateway's listeners (as seen
+in the above examples) a `TCPRoute` can also match further on the traffic bound
+for that listener:
+
+```
+{% include 'v1alpha2/traffic-matching-tcp.yaml' %}
+```
+
+In the above example the `matches` option for the `TCPRoute` rules enables the
+route to only serve the traffic that matches specified destination and/or source
+address patterns. In this way separate `TCPRoute` objects can be responsible
+for routing different traffic on the same `Gateway` listener and can enable
+significant flexibility for pure TCP routing.
+
 ## Alternatives: TCP Traffic Routing Using Metadata
 
 While in the above examples we mainly focused on routing by port, it is also
