@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"sigs.k8s.io/gateway-api/apis/v1beta1"
 	"sigs.k8s.io/gateway-api/conformance/utils/config"
 )
 
@@ -51,12 +52,45 @@ type Applier struct {
 
 	// FS is the filesystem to use when reading manifests.
 	FS embed.FS
+
+	// UsableNetworkAddresses is an optional pool of usable addresses for
+	// Gateways for tests which need to test manual address assignments.
+	UsableNetworkAddresses []v1beta1.GatewayAddress
+
+	// UnusableNetworkAddresses is an optional pool of unusable addresses for
+	// Gateways for tests which need to test failures with manual Gateway
+	// address assignment.
+	UnusableNetworkAddresses []v1beta1.GatewayAddress
 }
 
 // prepareGateway adjusts the gatewayClassName.
 func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
+	ns := uObj.GetNamespace()
+	name := uObj.GetName()
+
 	err := unstructured.SetNestedField(uObj.Object, a.GatewayClass, "spec", "gatewayClassName")
-	require.NoErrorf(t, err, "error setting `spec.gatewayClassName` on %s Gateway resource", uObj.GetName())
+	require.NoErrorf(t, err, "error setting `spec.gatewayClassName` on Gateway %s/%s", ns, name)
+
+	rawAddrs, hasStaticAddrs, err := unstructured.NestedFieldCopy(uObj.Object, "spec", "addresses")
+	require.NoError(t, err, "error retrieving spec.addresses to verify if any static addresses were present on Gateway resource %s/%s", ns, name)
+
+	if hasStaticAddrs {
+		addrs, ok := rawAddrs.([]v1beta1.GatewayAddress)
+		require.True(t, ok)
+		require.NotEmpty(t, addrs, "a test called for static Gateway network addresses, but none were provided")
+
+		var overlayAddrs []v1beta1.GatewayAddress
+		for _, addr := range addrs {
+			if addr.Value == "PLACEHOLDER_USABLE_ADDRS" {
+				overlayAddrs = append(overlayAddrs, a.UsableNetworkAddresses...)
+			} else if addr.Value == "PLACEHOLDER_UNUSABLE_ADDRS" {
+				overlayAddrs = append(overlayAddrs, a.UnusableNetworkAddresses...)
+			}
+		}
+
+		err = unstructured.SetNestedField(uObj.Object, overlayAddrs, "spec", "addresses")
+		require.NoError(t, err, "could not overlay static addresses on Gateway %s/%s", ns, name)
+	}
 }
 
 // prepareGatewayClass adjust the spec.controllerName on the resource

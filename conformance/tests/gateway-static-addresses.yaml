@@ -7,15 +7,12 @@ metadata:
 spec:
   gatewayClassName: "{GATEWAY_CLASS_NAME}"
   addresses:
-  # This address is valid for its type, but the underlying implementation
-  # can not actually support it, so it should result in Programmed False.
-  # Until removed or fixed.
-  - type: IPAddress
-    value: "1.1.1.1" # TODO: template
-  # This is a valid IP address that the underlying implementation will
-  # accept and can be bound to the Gateway.
-  - type: IPAddress
-    value: "172.18.0.242" # TODO: template
+  # This indicates an address that is known to not be usable by the
+  # implementation and will be substituted with user provided types and values.
+  - value: "PLACEHOLDER_UNUSABLE_ADDRS"
+  # This indicates an address that is known to be usable by the implementation
+  # and will be substituted with user provided types and values.
+  - value: "PLACEHOLDER_USABLE_ADDRS"
   listeners:
   - name: http
     port: 8080
