@@ -657,14 +657,6 @@ const (
 	// conditions when the status is "Unknown" and no controller has reconciled
 	// the Gateway.
 	GatewayReasonPending GatewayConditionReason = "Pending"
-
-	// This reason is used with the "Accepted" condition when the Gateway could not be configured
-	// because the requested address is not supported. This reason could be used in a number of
-	// instances, including:
-	//
-	// * The address is already in use.
-	// * The type of address is not supported by the implementation.
-	GatewayReasonUnsupportedAddress GatewayConditionReason = "UnsupportedAddress"
 )
 
 const (
