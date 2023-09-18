@@ -622,7 +622,25 @@ const (
 	//   * IPAM address exhaustion
 	//   * Address not yet allocated
 	//
+	// When this reason is used the implementation SHOULD provide a clear
+	// message explaining the underlying problem, ideally with some hints as to
+	// what actions can be taken that might resolve the problem.
 	GatewayReasonAddressNotAssigned GatewayConditionReason = "AddressNotAssigned"
+
+	// This reason is used with the "Programmed" condition when the underlying
+	// implementation (and possibly, network) are unable to use an address that
+	// was provided in the Gateway specification.
+	//
+	// Some example situations where this reason can be used:
+	//
+	//   * a named address not being found
+	//   * a provided static address can't be used
+	//   * the implementation doesn't support the address Type
+	//
+	// When this reason is used the implementation SHOULD provide prescriptive
+	// information on which address is causing the problem and how to resolve it
+	// in the condition message.
+	GatewayReasonAddressNotUsable GatewayConditionReason = "AddressNotUsable"
 )
 
 const (
