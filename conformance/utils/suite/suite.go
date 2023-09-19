@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"sigs.k8s.io/gateway-api/apis/v1beta1"
 	"sigs.k8s.io/gateway-api/conformance"
 	"sigs.k8s.io/gateway-api/conformance/utils/config"
 	"sigs.k8s.io/gateway-api/conformance/utils/kubernetes"
@@ -78,6 +79,15 @@ type Options struct {
 	SkipTests []string
 
 	FS *embed.FS
+
+	// UsableNetworkAddresses is an optional pool of usable addresses for
+	// Gateways for tests which need to test manual address assignments.
+	UsableNetworkAddresses []v1beta1.GatewayAddress
+
+	// UnusableNetworkAddresses is an optional pool of unusable addresses for
+	// Gateways for tests which need to test failures with manual Gateway
+	// address assignment.
+	UnusableNetworkAddresses []v1beta1.GatewayAddress
 }
 
 // New returns a new ConformanceTestSuite.
@@ -119,8 +129,10 @@ func New(s Options) *ConformanceTestSuite {
 		BaseManifests:    s.BaseManifests,
 		MeshManifests:    s.MeshManifests,
 		Applier: kubernetes.Applier{
-			NamespaceLabels:      s.NamespaceLabels,
-			NamespaceAnnotations: s.NamespaceAnnotations,
+			NamespaceLabels:          s.NamespaceLabels,
+			NamespaceAnnotations:     s.NamespaceAnnotations,
+			UsableNetworkAddresses:   s.UnusableNetworkAddresses,
+			UnusableNetworkAddresses: s.UnusableNetworkAddresses,
 		},
 		SupportedFeatures: s.SupportedFeatures,
 		TimeoutConfig:     s.TimeoutConfig,
