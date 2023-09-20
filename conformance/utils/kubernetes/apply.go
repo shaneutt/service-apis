@@ -86,13 +86,25 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 	// intention to overlay them with address pools provided by the test suite
 	// caller.
 	if len(gwspec.Addresses) > 0 {
-		var overlayAddrs []v1beta1.GatewayAddress
+		var overlayUsable, overlayUnusuable bool
 		for _, addr := range gwspec.Addresses {
 			if addr.Value == "PLACEHOLDER_USABLE_ADDRS" {
-				overlayAddrs = append(overlayAddrs, a.UsableNetworkAddresses...)
+				t.Log("this test requires usable gateway addresses")
+				overlayUsable = true
 			} else if addr.Value == "PLACEHOLDER_UNUSABLE_ADDRS" {
-				overlayAddrs = append(overlayAddrs, a.UnusableNetworkAddresses...)
+				t.Log("this test requires unusable gateway addresses")
+				overlayUnusuable = true
 			}
+		}
+
+		var overlayAddrs []v1beta1.GatewayAddress
+		if overlayUsable {
+			t.Logf("address pool of %d usable addresses will be overlayed", len(a.UsableNetworkAddresses))
+			overlayAddrs = append(overlayAddrs, a.UsableNetworkAddresses...)
+		}
+		if overlayUnusuable {
+			t.Logf("address pool of %d unusable addresses will be overlayed", len(a.UnusableNetworkAddresses))
+			overlayAddrs = append(overlayAddrs, a.UnusableNetworkAddresses...)
 		}
 
 		err = unstructured.SetNestedSlice(uObj.Object, gwaddr2int(overlayAddrs), "spec", "addresses")
