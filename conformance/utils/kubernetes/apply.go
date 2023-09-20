@@ -95,7 +95,7 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 			}
 		}
 
-		err = unstructured.SetNestedField(uObj.Object, overlayAddrs, "spec", "addresses")
+		err = unstructured.SetNestedSlice(uObj.Object, gwaddr2int(overlayAddrs), "spec", "addresses")
 		require.NoError(t, err, "could not overlay static addresses on Gateway %s/%s", ns, name)
 	}
 }
@@ -306,4 +306,11 @@ func getContentsFromPathOrURL(fs embed.FS, location string, timeoutConfig config
 		return nil, err
 	}
 	return bytes.NewBuffer(b), nil
+}
+
+func gwaddr2int(addrs []v1beta1.GatewayAddress) (rawAddrs []interface{}) {
+	for _, addr := range addrs {
+		rawAddrs = append(rawAddrs, addr)
+	}
+	return
 }
