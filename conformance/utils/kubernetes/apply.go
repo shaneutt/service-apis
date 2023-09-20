@@ -79,7 +79,7 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 	rawSpecMap, ok := rawSpec.(map[string]interface{})
 	require.True(t, ok, "expected gw spec received %T", rawSpec)
 
-	var gwspec v1beta1.GatewaySpec
+	gwspec := &v1beta1.GatewaySpec{}
 	require.NoError(t, runtime.DefaultUnstructuredConverter.FromUnstructured(rawSpecMap, gwspec))
 
 	// if there are any static addresses on the Gateway, this indicates the
