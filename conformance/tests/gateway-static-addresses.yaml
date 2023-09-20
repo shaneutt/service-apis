@@ -11,7 +11,7 @@ spec:
   # are indicating Gateways with unsupported addresses are not accepted.
   # the test will remove this address once it confirms it triggers a status of
   # Accepted==False.
-  - type: InvalidType
+  - type: "test/fake-invalid-type"
     value: "fake address teehee!"
   # This indicates an address that is known to not be usable by the
   # implementation and will be substituted with user provided types and values.

@@ -54,13 +54,12 @@ type Applier struct {
 	// FS is the filesystem to use when reading manifests.
 	FS embed.FS
 
-	// UsableNetworkAddresses is an optional pool of usable addresses for
-	// Gateways for tests which need to test manual address assignments.
+	// UsableNetworkAddresses is a list of addresses that are expected to be
+	// supported AND usable for Gateways in the underlying implementation.
 	UsableNetworkAddresses []v1beta1.GatewayAddress
 
-	// UnusableNetworkAddresses is an optional pool of unusable addresses for
-	// Gateways for tests which need to test failures with manual Gateway
-	// address assignment.
+	// UnusableNetworkAddresses is a list of addresses that are expected to be
+	// supported, but not usable for Gateways in the underlying implementation.
 	UnusableNetworkAddresses []v1beta1.GatewayAddress
 }
 
@@ -82,14 +81,12 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 	gwspec := &v1beta1.GatewaySpec{}
 	require.NoError(t, runtime.DefaultUnstructuredConverter.FromUnstructured(rawSpecMap, gwspec))
 
-	// if there are any static addresses on the Gateway, this indicates the
-	// intention to overlay them with address pools provided by the test suite
-	// caller.
+	// for tests which have placeholders for static gateway addresses we will
+	// inject real addresses from the address pools the caller provided.
 	if len(gwspec.Addresses) > 0 {
 		// this is a hack because we don't have any other great way to inject custom
 		// values into the test YAML at the time of writing: Gateways that include
-		// either addresses of type "InvalidType" or addresses with the following
-		// values:
+		// addresses with the following values:
 		//
 		//   * PLACEHOLDER_USABLE_ADDRS
 		//   * PLACEHOLDER_UNUSABLE_ADDRS
@@ -98,8 +95,13 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 		// relevant addresses (usable, or unusable ones) in the test suite, and those
 		// addresses will be injected into the Gateway and the placeholders removed.
 		//
-		// I would really love to find a better way to do this kind of thing in the
-		// future.
+		// A special "test/fake-invalid-type" can be provided as well in the test to
+		// explicitly trigger a failure to support a type. If an implementation ever
+		// comes along actually trying to support that type, I'm going to be very
+		// cranky.
+		//
+		// Note: I would really love to find a better way to do this kind of
+		// thing in the future.
 		var overlayUsable, overlayUnusuable bool
 		var specialAddrs []v1beta1.GatewayAddress
 		for _, addr := range gwspec.Addresses {
@@ -107,7 +109,7 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 				overlayUsable = true
 			} else if addr.Value == "PLACEHOLDER_UNUSABLE_ADDRS" {
 				overlayUnusuable = true
-			} else if addr.Type != nil && *addr.Type == "InvalidType" {
+			} else if addr.Type != nil && *addr.Type == "test/fake-invalid-type" {
 				specialAddrs = append(specialAddrs, addr)
 			}
 		}
