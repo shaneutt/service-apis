@@ -30,6 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,18 +72,22 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 	err := unstructured.SetNestedField(uObj.Object, a.GatewayClass, "spec", "gatewayClassName")
 	require.NoErrorf(t, err, "error setting `spec.gatewayClassName` on Gateway %s/%s", ns, name)
 
-	rawField, hasStaticAddrs, err := unstructured.NestedFieldCopy(uObj.Object, "spec", "addresses")
+	rawSpec, hasSpec, err := unstructured.NestedFieldCopy(uObj.Object, "spec", "addresses")
 	require.NoError(t, err, "error retrieving spec.addresses to verify if any static addresses were present on Gateway resource %s/%s", ns, name)
+	require.True(t, hasSpec)
 
-	if hasStaticAddrs {
-		rawAddrs, ok := rawField.([]interface{})
-		require.True(t, ok, "expected []interface{} for gw addrs, got %T", rawField)
-		require.NotEmpty(t, rawAddrs, "a test called for static Gateway network addresses, but none were provided")
+	rawSpecMap, ok := rawSpec.(map[string]interface{})
+	require.True(t, ok, "expected gw spec received %T", rawSpec)
 
+	var gwspec v1beta1.GatewaySpec
+	require.NoError(t, runtime.DefaultUnstructuredConverter.FromUnstructured(rawSpecMap, gwspec))
+
+	// if there are any static addresses on the Gateway, this indicates the
+	// intention to overlay them with address pools provided by the test suite
+	// caller.
+	if len(gwspec.Addresses) > 0 {
 		var overlayAddrs []v1beta1.GatewayAddress
-		for _, rawAddr := range rawAddrs {
-			addr, ok := rawAddr.(v1beta1.GatewayAddress)
-			require.True(t, ok, "expected v1beta1.GatewayAddress for gw addr, got %T", rawAddr)
+		for _, addr := range gwspec.Addresses {
 			if addr.Value == "PLACEHOLDER_USABLE_ADDRS" {
 				overlayAddrs = append(overlayAddrs, a.UsableNetworkAddresses...)
 			} else if addr.Value == "PLACEHOLDER_UNUSABLE_ADDRS" {
