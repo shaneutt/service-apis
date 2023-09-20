@@ -239,6 +239,24 @@ func NamespacesMustBeReady(t *testing.T, c client.Client, timeoutConfig config.T
 	require.NoErrorf(t, waitErr, "error waiting for %s namespaces to be ready", strings.Join(namespaces, ", "))
 }
 
+// GatewayAcceptedConditionMustEqual requires that a provided Gateway resource includes the Accepted
+// condition present that matches the provided status and reason.
+func GatewayAcceptedConditionMustEqual(t *testing.T, gw *v1beta1.Gateway, status metav1.ConditionStatus, reason v1beta1.GatewayConditionReason) {
+	require.True(t,
+		findConditionInList(t, gw.Status.Conditions, string(v1beta1.GatewayConditionAccepted), string(status), string(reason)),
+		"Accepted status of %s with reason %s was NOT present on Gateway %s/%s as required", status, reason, gw.Namespace, gw.Name,
+	)
+}
+
+// GatewayProgrammedConditionMustEqual requires that a provided Gateway resource includes the Programmed
+// condition present that matches the provided status and reason.
+func GatewayProgrammedConditionMustEqual(t *testing.T, gw *v1beta1.Gateway, status metav1.ConditionStatus, reason v1beta1.GatewayConditionReason) {
+	require.True(t,
+		findConditionInList(t, gw.Status.Conditions, string(v1beta1.GatewayConditionProgrammed), string(status), string(reason)),
+		"Programmed status of %s with reason %s was NOT present on Gateway %s/%s as required", status, reason, gw.Namespace, gw.Name,
+	)
+}
+
 // MeshNamespacesMustBeReady waits until all Pods are marked Ready. This is
 // intended to be used for mesh tests and does not require any Gateways to
 // exist. This will cause the test to halt if the specified timeout is exceeded.
