@@ -97,17 +97,17 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 			}
 		}
 
-		var overlayAddrs []v1beta1.GatewayAddress
+		var primOverlayAddrs []interface{}
 		if overlayUsable {
 			t.Logf("address pool of %d usable addresses will be overlayed", len(a.UsableNetworkAddresses))
-			overlayAddrs = append(overlayAddrs, a.UsableNetworkAddresses...)
+			primOverlayAddrs = append(primOverlayAddrs, convertGatewayAddrsToPrimitives(a.UsableNetworkAddresses)...)
 		}
 		if overlayUnusuable {
 			t.Logf("address pool of %d unusable addresses will be overlayed", len(a.UnusableNetworkAddresses))
-			overlayAddrs = append(overlayAddrs, a.UnusableNetworkAddresses...)
+			primOverlayAddrs = append(primOverlayAddrs, convertGatewayAddrsToPrimitives(a.UnusableNetworkAddresses)...)
 		}
 
-		err = unstructured.SetNestedField(uObj.Object, overlayAddrs, "spec", "addresses")
+		err = unstructured.SetNestedSlice(uObj.Object, primOverlayAddrs, "spec", "addresses")
 		require.NoError(t, err, "could not overlay static addresses on Gateway %s/%s", ns, name)
 	}
 }
@@ -318,4 +318,21 @@ func getContentsFromPathOrURL(fs embed.FS, location string, timeoutConfig config
 		return nil, err
 	}
 	return bytes.NewBuffer(b), nil
+}
+
+// convertGatewayAddrsToPrimitives converts a slice of Gateway addresses and
+// to a slice of primite types and then returns them as a []interface{} so that
+// they can be applied back to an unstructured Gateway.
+func convertGatewayAddrsToPrimitives(gwaddrs []v1beta1.GatewayAddress) (raw []interface{}) {
+	for _, addr := range gwaddrs {
+		addrType := string(v1beta1.IPAddressType)
+		if addr.Type != nil {
+			addrType = string(*addr.Type)
+		}
+		raw = append(raw, map[string]interface{}{
+			"type":  addrType,
+			"value": addr.Value,
+		})
+	}
+	return
 }
