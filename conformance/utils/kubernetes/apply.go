@@ -86,14 +86,29 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 	// intention to overlay them with address pools provided by the test suite
 	// caller.
 	if len(gwspec.Addresses) > 0 {
+		// this is a hack because we don't have any other great way to inject custom
+		// values into the test YAML at the time of writing: Gateways that include
+		// either addresses of type "InvalidType" or addresses with the following
+		// values:
+		//
+		//   * PLACEHOLDER_USABLE_ADDRS
+		//   * PLACEHOLDER_UNUSABLE_ADDRS
+		//
+		// indicate that they expect the caller of the test suite to have provided
+		// relevant addresses (usable, or unusable ones) in the test suite, and those
+		// addresses will be injected into the Gateway and the placeholders removed.
+		//
+		// I would really love to find a better way to do this kind of thing in the
+		// future.
 		var overlayUsable, overlayUnusuable bool
+		var specialAddrs []v1beta1.GatewayAddress
 		for _, addr := range gwspec.Addresses {
 			if addr.Value == "PLACEHOLDER_USABLE_ADDRS" {
-				t.Log("this test requires usable gateway addresses")
 				overlayUsable = true
 			} else if addr.Value == "PLACEHOLDER_UNUSABLE_ADDRS" {
-				t.Log("this test requires unusable gateway addresses")
 				overlayUnusuable = true
+			} else if addr.Type != nil && *addr.Type == "InvalidType" {
+				specialAddrs = append(specialAddrs, addr)
 			}
 		}
 
@@ -105,6 +120,10 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 		if overlayUnusuable {
 			t.Logf("address pool of %d unusable addresses will be overlayed", len(a.UnusableNetworkAddresses))
 			primOverlayAddrs = append(primOverlayAddrs, convertGatewayAddrsToPrimitives(a.UnusableNetworkAddresses)...)
+		}
+		if len(specialAddrs) > 0 {
+			t.Logf("the test provides %d special addresses that will be kept", len(specialAddrs))
+			primOverlayAddrs = append(primOverlayAddrs, convertGatewayAddrsToPrimitives(specialAddrs)...)
 		}
 
 		err = unstructured.SetNestedSlice(uObj.Object, primOverlayAddrs, "spec", "addresses")
