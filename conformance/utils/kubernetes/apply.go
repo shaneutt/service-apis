@@ -72,7 +72,7 @@ func (a Applier) prepareGateway(t *testing.T, uObj *unstructured.Unstructured) {
 	err := unstructured.SetNestedField(uObj.Object, a.GatewayClass, "spec", "gatewayClassName")
 	require.NoErrorf(t, err, "error setting `spec.gatewayClassName` on Gateway %s/%s", ns, name)
 
-	rawSpec, hasSpec, err := unstructured.NestedFieldCopy(uObj.Object, "spec", "addresses")
+	rawSpec, hasSpec, err := unstructured.NestedFieldCopy(uObj.Object, "spec")
 	require.NoError(t, err, "error retrieving spec.addresses to verify if any static addresses were present on Gateway resource %s/%s", ns, name)
 	require.True(t, hasSpec)
 
