@@ -4,6 +4,8 @@ kind: Gateway
 metadata:
   name: gateway-static-addresses
   namespace: gateway-conformance-infra
+  annotations:
+    sigs.k8s.io/gateway-api/skip-in-conformance-test-setup: true
 spec:
   gatewayClassName: "{GATEWAY_CLASS_NAME}"
   addresses:
